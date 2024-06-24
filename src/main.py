@@ -20,6 +20,7 @@ deps = os.path.join(current_dir,'deps')
 if not os.path.exists(deps):
 	os.makedirs(deps)
 
+# fonction récursive pour obtenir toutes les dépendances
 def extract_dependencies(deps, result):
     if deps is None:
         return
