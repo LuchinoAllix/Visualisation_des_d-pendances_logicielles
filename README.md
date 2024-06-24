@@ -1,1 +1,1 @@
-# Visualisation_des_d-pendances_logicielles
+# Visualisation des dépendances logicielles
