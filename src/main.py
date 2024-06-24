@@ -35,11 +35,15 @@ def extract_dependencies(deps, result):
 
 def commitCount(u, r):
 	# https://gist.github.com/codsane/25f0fd100b565b3fce03d4bbd7e7bf33
-	return re.search('\d+$', requests.get('https://api.github.com/repos/{}/{}/commits?per_page=1'.format(u, r)).links['last']['url']).group()
+	response = requests.get(f'https://api.github.com/repos/{u}/{r}/commits?per_page=1')
+	last_page_url = response.links['last']['url']
+	return re.search(r'\d+$', last_page_url).group()
 
 def contributorsCount(u, r):
 	# https://gist.github.com/codsane/25f0fd100b565b3fce03d4bbd7e7bf33
-	return re.search('\d+$', requests.get('https://api.github.com/repos/{}/{}/contributors?per_page=1'.format(u, r)).links['last']['url']).group()
+	response = requests.get(f'https://api.github.com/repos/{u}/{r}/contributors?per_page=1')
+	last_page_url = response.links['last']['url']
+	return re.search(r'\d+$', last_page_url).group()
 
 def get_data(repo_url):
 	# Extraire le nom du propriétaire et le nom du repo à partir de l'URL
@@ -105,7 +109,7 @@ for repo_url in projects_url :
 	# npm ci
 	try:
 		print('run npm ci')
-		#subprocess.run(['npm', 'ci'],capture_output=True,shell=True)
+		subprocess.run(['npm', 'ci'],capture_output=True,shell=True)
 		print('npm ci exécuté avec succès.')
 	except subprocess.CalledProcessError as e:
 		print(f'Erreur lors de l\'exécution de npm ci : {e}')
@@ -113,7 +117,7 @@ for repo_url in projects_url :
 	# npm list -all -json > alldeps.json
 	try:
 		print('run npm list -all -json > alldeps.json')
-		#subprocess.run(['npm', 'list','-all','-json', '>',depsfile],capture_output=True,shell=True)
+		subprocess.run(['npm', 'list','-all','-json', '>',depsfile],capture_output=True,shell=True)
 		print('depsfile crée avec succès.')
 	except subprocess.CalledProcessError as e:
 		print(f'Erreur lors de la création de depsfile : {e}')
