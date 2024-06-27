@@ -3,26 +3,21 @@ import subprocess
 import json
 import requests
 import re
+import shutil
+import stat
 from git import Repo
 
-# Liste des projets à analyser
-projects_url = ["https://github.com/processing/p5.js"
-			,"https://github.com/Tonejs/Tone.js"
-			,"https://github.com/meezwhite/p5.grain"]
 
-#projects_url = ["https://github.com/meezwhite/p5.grain"]
-
-# path de ce fichier
-current_dir = os.path.dirname(os.path.abspath(__file__))
-
-# vérifie que les dir tmp et deps existent sinon les crées
-tmp = os.path.join(current_dir,'tmp')
-if not os.path.exists(tmp):
-	os.makedirs(tmp)
-
-deps = os.path.join(current_dir,'deps')
-if not os.path.exists(deps):
-	os.makedirs(deps)
+def deleteDir(dossier):
+    # Fonction pour changer les permissions de tous les fichiers dans le dossier
+    for root, dirs, files in os.walk(dossier):
+        for dir in dirs:
+            os.chmod(os.path.join(root, dir), stat.S_IRWXU)
+        for file in files:
+            os.chmod(os.path.join(root, file), stat.S_IRWXU)
+    
+    # Supprime le dossier et tout son contenu
+    shutil.rmtree(dossier)
 
 # fonction récursive pour obtenir toutes les dépendances
 def extract_dependencies(deps, result):
@@ -83,6 +78,26 @@ def count_files(repo_path):
 
 	return js_files, json_files
 
+# Liste des projets à analyser
+projects_url = ["https://github.com/processing/p5.js"
+			,"https://github.com/Tonejs/Tone.js"
+			,"https://github.com/meezwhite/p5.grain"]
+
+#projects_url = ["https://github.com/meezwhite/p5.grain"]
+
+# path de ce fichier
+current_dir = os.path.dirname(os.path.abspath(__file__))
+git_error = 0
+
+# vérifie que les dir tmp et deps existent sinon les crées
+tmp = os.path.join(current_dir,'tmp')
+if not os.path.exists(tmp):
+	os.makedirs(tmp)
+
+deps = os.path.join(current_dir,'deps')
+if not os.path.exists(deps):
+	os.makedirs(deps)
+
 for repo_url in projects_url :
 
 	repo_name = repo_url.split('/')[-1].replace('.git', '')
@@ -90,56 +105,77 @@ for repo_url in projects_url :
 
 	print(f'Analyse de {repo_name}')
 
-	# on clone que si on n'a pas déjà le projet
-	if not os.path.exists(repo_path):
+	# on supprime le dossier si déjà présent
+	if os.path.exists(repo_path):
+		deleteDir(repo_path)
+
+	try :
+		print(f'clonnage de {repo_name}')
+		repo = Repo.clone_from(repo_url, repo_path)
+		print(f'repo {repo_name} clonné avec succés')
+	except Exception as e:
+		print(f'Erreur lors du clonage du répo {repo_name} : {e}')
+		exit(1)
+
+	# on vide le dossier deps
+	depsRepo = os.path.join(deps,repo_name)
+	if os.path.exists(depsRepo) :
+		deleteDir(depsRepo)
+
+	tags = [tag.name for tag in repo.tags]
+
+	for tag in tags :
+
 		try :
-			print(f'clonnage de {repo_name}')
-			Repo.clone_from(repo_url, repo_path)
-			print(f'repo {repo_name} clonné avec succés')
-		except :
-			print(f'Erreur lors du clonage du répo {repo_name} : {e}')
-	else :
-		print(f'Pas de clonnage de {repo_name} car déjà présent')
+			repo.git.checkout(tag)		
 
-	depsfile = os.path.join(deps,repo_name + '.json')
+			versionFolder = os.path.join(deps,repo_name,tag)
 
-	# on se déplace dans le dir du répo pour exxécuter les commandes bash
-	os.chdir(repo_path) 
+			if not os.path.exists(versionFolder):
+				os.makedirs(versionFolder)
 
-	# npm ci
-	try:
-		print('run npm ci')
-		subprocess.run(['npm', 'ci'],capture_output=True,shell=True)
-		print('npm ci exécuté avec succès.')
-	except subprocess.CalledProcessError as e:
-		print(f'Erreur lors de l\'exécution de npm ci : {e}')
+			depsfile = os.path.join(versionFolder,repo_name + 'v' + tag +'.json')
 
-	# npm list -all -json > alldeps.json
-	try:
-		print('run npm list -all -json > alldeps.json')
-		subprocess.run(['npm', 'list','-all','-json', '>',depsfile],capture_output=True,shell=True)
-		print('depsfile crée avec succès.')
-	except subprocess.CalledProcessError as e:
-		print(f'Erreur lors de la création de depsfile : {e}')
+			try:
+				# npm ci (installe toutes les dépendances)
+				subprocess.run(['npm', 'ci'],capture_output=True,shell=True, cwd=repo_path)
+			except subprocess.CalledProcessError as e:
+				print(f'Erreur lors de l\'exécution de npm ci : {e}')
+
+			try:
+				# npm list -all -json > alldeps.json (création du fichier avec toutes les dépendances)
+				subprocess.run(['npm', 'list','-all','-json', '>',depsfile],capture_output=True,shell=True, cwd=repo_path)
+
+				# rm -rf node_modules (supprime toutes les dépendances)
+				subprocess.run(['rm', '-rf','node_modules'], capture_output=True, shell=True, cwd=repo_path)
+			except subprocess.CalledProcessError as e:
+				print(f'Erreur lors de la création de depsfile : {e}')
+				
+			with open(depsfile, 'r') as file:
+				data = json.load(file)
+
+			all_dependencies = set()
+			extract_dependencies(data.get('dependencies'), all_dependencies)
+
+			# api_data = get_data(repo_url)
+			# pour éviter de spam l'api github
+			api_data=[0,0,0]
+			files_data = count_files(repo_path)
+			
+			print(f'\nDonnées de {repo_name} version : {tag}:')
+
+			print(f'nombre de dépendances :{len(all_dependencies)}')
+			print(f'nombre de commits : {api_data[0]}')
+			print(f'date dernier commit : {api_data[1]}')
+			print(f'nombre de contributeurs : {api_data[2]}')
+			print(f'nombre de fichier .js : {files_data[0]}')
+			print(f'nombre de fichier .json : {files_data[1]}')
+
+			print('\n')
 		
+		except :
+			git_error+=1
 
-	with open(depsfile, 'r') as file:
-		data = json.load(file)
+	deleteDir(repo_path)
 
-	all_dependencies = set()
-	extract_dependencies(data.get('dependencies'), all_dependencies)
-
-	api_data = get_data(repo_url)
-	files_data = count_files(repo_path)
-
-	print(f'\nDonnées de {repo_name} :')
-
-	print(f'nombre de dépendances :{len(all_dependencies)}')
-	print(f'nombre de commits : {api_data[0]}')
-	print(f'date dernier commit : {api_data[1]}')
-	print(f'nombre de contributeurs : {api_data[2]}')
-	print(f'nombre de fichier .js : {files_data[0]}')
-	print(f'nombre de fichier .json : {files_data[1]}')
-
-
-	print('\n')
+print(git_error)
