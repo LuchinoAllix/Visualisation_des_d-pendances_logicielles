@@ -134,7 +134,8 @@ for repo_url in projects_url :
 			if not os.path.exists(versionFolder):
 				os.makedirs(versionFolder)
 
-			depsfile = os.path.join(versionFolder,repo_name + 'v' + tag +'.json')
+			depsfile = os.path.join(versionFolder,repo_name + '_' + tag +'_deps.json')
+			datafile = os.path.join(versionFolder,repo_name + '_' + tag +'_data.json')
 
 			try:
 				# npm ci (installe toutes les dépendances)
@@ -161,21 +162,27 @@ for repo_url in projects_url :
 			# pour éviter de spam l'api github
 			api_data=[0,0,0]
 			files_data = count_files(repo_path)
+
+			data_json = {
+				"repo_name": repo_name,
+				"release_date": '?',
+				"version": tag,
+				"dependencies_file_path": repo_name + '_' + tag +'_deps.json',
+				"commit_count": api_data[0],
+				"last_commit_date": api_data[1],
+				"contributor_count": api_data[2],
+				"contributors": ['?'],
+				"dependencies" : len(all_dependencies),
+				"js_file_count": files_data[0],
+				"json_file_count": files_data[1]
+			}
 			
-			print(f'\nDonnées de {repo_name} version : {tag}:')
-
-			print(f'nombre de dépendances :{len(all_dependencies)}')
-			print(f'nombre de commits : {api_data[0]}')
-			print(f'date dernier commit : {api_data[1]}')
-			print(f'nombre de contributeurs : {api_data[2]}')
-			print(f'nombre de fichier .js : {files_data[0]}')
-			print(f'nombre de fichier .json : {files_data[1]}')
-
-			print('\n')
+			with open(datafile,'w') as file :
+				json.dump(data_json,file,indent=4)
 		
 		except :
 			git_error+=1
 
 	deleteDir(repo_path)
 
-print(git_error)
+print(f'Nombre de versions non analysées car error:{git_error}')
