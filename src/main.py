@@ -5,7 +5,7 @@ import requests
 import re
 import shutil
 import stat
-from git import Repo
+import git
 
 def deleteDir(dossier):
     # Fonction pour changer les permissions de tous les fichiers dans le dossier
@@ -116,11 +116,11 @@ for repo_url in projects_url :
 
 	try :
 		print(f'clonnage de {repo_name}')
-		repo = Repo.clone_from(repo_url, repo_path)
+		repo = git.Repo.clone_from(repo_url, repo_path)
 		print(f'repo {repo_name} clonné avec succés')
 	except Exception as e:
 		print(f'Erreur lors du clonage du répo {repo_name} : {e}')
-		exit(1)
+		exit(1) # todo voir quoi faire
 
 	# on vide le dossier deps
 	depsRepo = os.path.join(deps,repo_name)
@@ -193,7 +193,6 @@ for repo_url in projects_url :
 		except Exception as e:
 			print(e)
 			git_error+=1
-		exit(1)
 
 	deleteDir(repo_path)
 
