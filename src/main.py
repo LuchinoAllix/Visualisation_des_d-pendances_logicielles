@@ -7,7 +7,6 @@ import shutil
 import stat
 from git import Repo
 
-
 def deleteDir(dossier):
     # Fonction pour changer les permissions de tous les fichiers dans le dossier
     for root, dirs, files in os.walk(dossier):
@@ -34,11 +33,17 @@ def commitCount(u, r):
 	last_page_url = response.links['last']['url']
 	return re.search(r'\d+$', last_page_url).group()
 
-def contributorsCount(u, r):
-	# https://gist.github.com/codsane/25f0fd100b565b3fce03d4bbd7e7bf33
-	response = requests.get(f'https://api.github.com/repos/{u}/{r}/contributors?per_page=1')
-	last_page_url = response.links['last']['url']
-	return re.search(r'\d+$', last_page_url).group()
+def contributorsList(u, r):
+    contributors = []
+    page = 1
+    while True:
+        response = requests.get(f'https://api.github.com/repos/{u}/{r}/contributors', params={'page': page})
+        data = response.json()
+        if not data:
+            break
+        contributors.extend([contributor['login'] for contributor in data])
+        page += 1
+    return contributors
 
 def get_data(repo_url):
 	# Extraire le nom du propriétaire et le nom du repo à partir de l'URL
@@ -56,10 +61,10 @@ def get_data(repo_url):
 		response_commits.raise_for_status()  # Lève une exception pour les erreurs HTTP
 
 		last_commit_date = response_commits.json()[0]['commit']['author']['date']
-		contributors_count = contributorsCount(owner,repo_name)
+		contributors = contributorsList(owner,repo_name)
 		commits_count = commitCount(owner,repo_name)
 
-		return commits_count, last_commit_date, contributors_count
+		return commits_count, last_commit_date, contributors
 
 	except requests.exceptions.RequestException as e:
 		print(f"Erreur lors de la récupération des données pour {repo_url}: {e}")
@@ -151,7 +156,7 @@ for repo_url in projects_url :
 				subprocess.run(['rm', '-rf','node_modules'], capture_output=True, shell=True, cwd=repo_path)
 			except subprocess.CalledProcessError as e:
 				print(f'Erreur lors de la création de depsfile : {e}')
-				
+
 			with open(depsfile, 'r') as file:
 				data = json.load(file)
 
@@ -160,28 +165,35 @@ for repo_url in projects_url :
 
 			# api_data = get_data(repo_url)
 			# pour éviter de spam l'api github
-			api_data=[0,0,0]
+			api_data=[0,0,[]]
 			files_data = count_files(repo_path)
+
+			commit = repo.tags[tag].commit
+			release_date = commit.committed_datetime.strftime('%Y-%m-%d %H:%M:%S')
 
 			data_json = {
 				"repo_name": repo_name,
-				"release_date": '?',
+				"release_date": release_date,
 				"version": tag,
 				"dependencies_file_path": repo_name + '_' + tag +'_deps.json',
 				"commit_count": api_data[0],
 				"last_commit_date": api_data[1],
-				"contributor_count": api_data[2],
-				"contributors": ['?'],
+				"contributor_count": len(api_data[2]),
+				"contributors": api_data[2],
 				"dependencies" : len(all_dependencies),
 				"js_file_count": files_data[0],
 				"json_file_count": files_data[1]
 			}
-			
+
+			print(data_json)
+
 			with open(datafile,'w') as file :
 				json.dump(data_json,file,indent=4)
 		
-		except :
+		except Exception as e:
+			print(e)
 			git_error+=1
+		exit(1)
 
 	deleteDir(repo_path)
 
