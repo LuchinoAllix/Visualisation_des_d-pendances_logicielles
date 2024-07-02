@@ -64,3 +64,6 @@ data_json = {
 	"json_file_count": _
 }
 ```
+## Contexte
+
+Ce travail est fait pour un cours de l'université de Montréal : projet d'informatique (IFT 3150).
