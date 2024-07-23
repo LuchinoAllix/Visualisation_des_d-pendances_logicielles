@@ -5,7 +5,8 @@ import requests
 import re
 import shutil
 import stat
-import git
+import time
+from git import Repo
 
 def deleteDir(dossier):
     # Fonction pour changer les permissions de tous les fichiers dans le dossier
@@ -26,6 +27,11 @@ def extract_dependencies(deps, result):
 		if dep not in result:
 			result.add(dep)
 			extract_dependencies(details.get('dependencies'), result)
+
+def count_dependencies(data):
+	all_dependencies = set()
+	extract_dependencies(data.get('dependencies'), all_dependencies)
+	return len(all_dependencies)
 
 def commitCount(u, r):
 	# https://gist.github.com/codsane/25f0fd100b565b3fce03d4bbd7e7bf33
@@ -83,27 +89,27 @@ def count_files(repo_path):
 
 	return js_files, json_files
 
-# Liste des projets à analyser
-projects_url = ["https://github.com/processing/p5.js"
-			,"https://github.com/Tonejs/Tone.js"
-			,"https://github.com/meezwhite/p5.grain"]
+def process(repo_url,light=True):
 
-#projects_url = ["https://github.com/meezwhite/p5.grain"]
+	# path de ce fichier
+	current_dir = os.path.dirname(os.path.abspath(__file__))
+	git_error = 0
+	is_windows = (os.name == 'nt')
 
-# path de ce fichier
-current_dir = os.path.dirname(os.path.abspath(__file__))
-git_error = 0
+	# vérifie que les dir tmp et deps existent sinon les crées
+	tmp = os.path.join(current_dir,'tmp')
+	if not os.path.exists(tmp):
+		os.makedirs(tmp)
+	else :
+		deleteDir(tmp)
+		os.makedirs(tmp)
 
-# vérifie que les dir tmp et deps existent sinon les crées
-tmp = os.path.join(current_dir,'tmp')
-if not os.path.exists(tmp):
-	os.makedirs(tmp)
-
-deps = os.path.join(current_dir,'deps')
-if not os.path.exists(deps):
-	os.makedirs(deps)
-
-for repo_url in projects_url :
+	deps = os.path.join(current_dir,'deps')
+	if not os.path.exists(deps):
+		os.makedirs(deps)
+	else :
+		deleteDir(deps)
+		os.makedirs(deps)
 
 	repo_name = repo_url.split('/')[-1].replace('.git', '')
 	repo_path = os.path.join(tmp,repo_name)
@@ -116,84 +122,94 @@ for repo_url in projects_url :
 
 	try :
 		print(f'clonnage de {repo_name}')
-		repo = git.Repo.clone_from(repo_url, repo_path)
+		repo = Repo.clone_from(repo_url, repo_path)
 		print(f'repo {repo_name} clonné avec succés')
 	except Exception as e:
 		print(f'Erreur lors du clonage du répo {repo_name} : {e}')
 		exit(1) # todo voir quoi faire
 
-	# on vide le dossier deps
-	depsRepo = os.path.join(deps,repo_name)
-	if os.path.exists(depsRepo) :
-		deleteDir(depsRepo)
-
 	tags = [tag.name for tag in repo.tags]
 
 	for tag in tags :
 
+		print(f'\tAnalyse de la version {tag}')
+
 		try :
-			repo.git.checkout(tag)		
 
-			versionFolder = os.path.join(deps,repo_name,tag)
+			repo.git.checkout(tag,force=True)	
 
-			if not os.path.exists(versionFolder):
-				os.makedirs(versionFolder)
-
-			depsfile = os.path.join(versionFolder,repo_name + '_' + tag +'_deps.json')
-			datafile = os.path.join(versionFolder,repo_name + '_' + tag +'_data.json')
-
+			depsfile = os.path.join(deps,repo_name[:-3] + '_' + tag + '.json')
 			try:
 				# npm ci (installe toutes les dépendances)
-				subprocess.run(['npm', 'ci'],capture_output=True,shell=True, cwd=repo_path)
+				subprocess.run(['npm', 'ci'],shell=is_windows, cwd=repo_path,capture_output=True)
 			except subprocess.CalledProcessError as e:
 				print(f'Erreur lors de l\'exécution de npm ci : {e}')
 
-			try:
+			try :
 				# npm list -all -json > alldeps.json (création du fichier avec toutes les dépendances)
-				subprocess.run(['npm', 'list','-all','-json', '>',depsfile],capture_output=True,shell=True, cwd=repo_path)
+				
+				result = subprocess.run(['npm', 'list', '--all', '--json'], cwd=repo_path,text=True,capture_output=True,shell=is_windows)
+				deps_dict = json.loads(result.stdout)
 
-				# rm -rf node_modules (supprime toutes les dépendances)
-				subprocess.run(['rm', '-rf','node_modules'], capture_output=True, shell=True, cwd=repo_path)
 			except subprocess.CalledProcessError as e:
 				print(f'Erreur lors de la création de depsfile : {e}')
+			try :
+				# rm -rf node_modules (supprime les dépendances = annule npm ci)
+				subprocess.run(['rm', '-rf','node_modules'], shell=is_windows, cwd=repo_path,capture_output=True)
+			except subprocess.CalledProcessError as e:
+				print(f'Erreur lors de l\'annulation de npm ci : {e}')
 
-			with open(depsfile, 'r') as file:
-				data = json.load(file)
+			deps_dict.pop('problems',None)
 
-			all_dependencies = set()
-			extract_dependencies(data.get('dependencies'), all_dependencies)
-
-			# api_data = get_data(repo_url)
-			# pour éviter de spam l'api github
 			api_data=[0,0,[]]
-			files_data = count_files(repo_path)
+			files_data = 0,0
+
+			if not light : # pour éviter de spam l'api github et de compter tous les fichiers
+				try :
+					api_data = get_data(repo_url) 
+				except :
+					api_data=[0,0,[]]
+					print(f'Erreur lors de l\'analyse git de la version {tag} : {e}')
+
+				files_data = count_files(repo_path)
+
+			depNb = count_dependencies(deps_dict)
 
 			commit = repo.tags[tag].commit
 			release_date = commit.committed_datetime.strftime('%Y-%m-%d %H:%M:%S')
 
 			data_json = {
-				"repo_name": repo_name,
 				"release_date": release_date,
-				"version": tag,
-				"dependencies_file_path": repo_name + '_' + tag +'_deps.json',
 				"commit_count": api_data[0],
 				"last_commit_date": api_data[1],
 				"contributor_count": len(api_data[2]),
 				"contributors": api_data[2],
-				"dependencies" : len(all_dependencies),
+				"dependencies_count" : depNb,
 				"js_file_count": files_data[0],
 				"json_file_count": files_data[1]
 			}
 
-			print(data_json)
+			deps_dict.update(data_json) 
 
-			with open(datafile,'w') as file :
-				json.dump(data_json,file,indent=4)
-		
+			with open(depsfile,'w') as file :
+				json.dump(deps_dict,file,indent=4)
+	
 		except Exception as e:
-			print(e)
+			print(f'Erreur lors de l\'analyse de la version {tag} : {e}')
 			git_error+=1
 
+	repo.close()
 	deleteDir(repo_path)
 
-print(f'Nombre de versions non analysées car error:{git_error}')
+	print(f'Nombre de versions non analysées car error: {git_error}')
+
+if __name__ == "__main__" :
+
+	# Projets à analyser
+	project_url = "https://github.com/processing/p5.js"
+
+	# "https://github.com/Tonejs/Tone.js"
+	# "https://github.com/meezwhite/p5.grain"
+	start = time.time()
+	process(project_url)
+	print(f'Temps total d\'analyse : {(time.time()-start) / 60} minutes')
