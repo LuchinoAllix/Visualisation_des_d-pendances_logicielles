@@ -164,3 +164,7 @@ cython_debug/
 /src/deps
 src/test.py
 /env_VDL
+src/oldtree.txt
+/src/trees
+/src/deps - Copy
+/deps - Copy
