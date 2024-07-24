@@ -92,19 +92,19 @@ def count_files(repo_path):
 def process(repo_url,light=True):
 
 	# path de ce fichier
-	current_dir = os.path.dirname(os.path.abspath(__file__))
+
 	git_error = 0
 	is_windows = (os.name == 'nt')
 
 	# vérifie que les dir tmp et deps existent sinon les crées
-	tmp = os.path.join(current_dir,'tmp')
+	tmp = 'tmp'
 	if not os.path.exists(tmp):
 		os.makedirs(tmp)
 	else :
 		deleteDir(tmp)
 		os.makedirs(tmp)
 
-	deps = os.path.join(current_dir,'deps')
+	deps = 'deps'
 	if not os.path.exists(deps):
 		os.makedirs(deps)
 	else :
