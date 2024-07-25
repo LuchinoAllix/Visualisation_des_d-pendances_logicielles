@@ -168,3 +168,6 @@ src/oldtree.txt
 /src/trees
 /src/deps - Copy
 /deps - Copy
+/src/node_modules
+src/package-lock.json
+src/package.json
