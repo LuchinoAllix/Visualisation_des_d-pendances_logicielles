@@ -74,11 +74,11 @@ Pour chaque version on obtient un fichier `.json` de la forme :
 
 ```
 {
-	"version": "",
+    "version": "",
   	"name": "",
   	"problems": [""],
   	"dependencies": { ... }
-	"release_date": "xxxx-xx-xx xx:xx:xx",
+    "release_date": "xxxx-xx-xx xx:xx:xx",
     "commit_count": x,
     "last_commit_date": x,
     "contributor_count": x,
