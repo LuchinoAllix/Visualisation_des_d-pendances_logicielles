@@ -45,6 +45,8 @@ python3 main.py https://github.com/processing/p5.js
 
 Les fichiers pour la visualisation seront prêts, il suffit de passer à la deuxième étape.
 
+to do mentionner les libraires à dl + mettre le fichier .exe
+
 ### 2) Visualisation des données
 
 todo
