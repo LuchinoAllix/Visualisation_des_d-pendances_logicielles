@@ -64,7 +64,7 @@ La raison principale de la lenteur du programme vient du fait que pour chaque ve
 
 Ce code sert à obtenir des informations sur des projets `.js` pour ensuite créer des visualisation sur ces dernières.
 
-Pour choisir le projet à analyser il faut le spécifier à l'exécution [expliqué ici](#exécution).
+Pour choisir le projet à analyser il faut le spécifier à l'exécution, [expliqué ici](#exécution).
 
 `main.py` fait appel à `fetch.py` et `convert.py`. 
 
@@ -122,7 +122,7 @@ Trois dossier vont être créer (s'ils n'existent pas déjà) :
 Exemple avec p5.js :
 
 ```
- └── src
+ └── cwd
 	├── deps
 	|	├── p5_0.json
 	|	├── p5_0.1.json
