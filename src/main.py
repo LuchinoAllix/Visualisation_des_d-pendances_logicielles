@@ -1,7 +1,7 @@
 from fetch import process
 from time import time
 from sys import argv
-from convert import main
+from convert import convert
 
 if __name__ == "__main__" :
 
@@ -21,4 +21,4 @@ if __name__ == "__main__" :
 	process(project_url,light)
 	print(f'Temps total d\'analyse : {(time()-start) / 60} minutes')
 
-	main()
+	convert()
