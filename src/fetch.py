@@ -138,6 +138,10 @@ def process(repo_url,light=True):
 			repo.git.checkout(tag,force=True)	
 
 			depsfile = os.path.join(deps,repo_name[:-3] + '_' + tag + '.json')
+
+			if tag == '0' : # Sinon les fichiers ne sont pas dans l'ordre
+				depsfile = os.path.join(deps,repo_name[:-3] + '_' + tag + '.0.json')
+
 			try:
 				# npm ci (installe toutes les dépendances)
 				subprocess.run(['npm', 'ci'],shell=is_windows, cwd=repo_path,capture_output=True)
