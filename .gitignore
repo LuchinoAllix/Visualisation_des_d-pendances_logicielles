@@ -171,3 +171,4 @@ src/oldtree.txt
 /src/node_modules
 src/package-lock.json
 src/package.json
+/src/deps-copy
