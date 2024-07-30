@@ -2,6 +2,7 @@ from fetch import process
 from time import time
 from sys import argv
 from convert import convert
+from normalize import normalize
 
 if __name__ == "__main__" :
 
@@ -22,3 +23,4 @@ if __name__ == "__main__" :
 	print(f'Temps total d\'analyse : {(time()-start) / 60} minutes')
 
 	convert()
+	normalize()
