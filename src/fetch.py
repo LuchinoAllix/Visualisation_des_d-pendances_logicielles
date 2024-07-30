@@ -141,6 +141,8 @@ def process(repo_url,light=True):
 
 			if tag == '0' : # Sinon les fichiers ne sont pas dans l'ordre
 				depsfile = os.path.join(deps,repo_name[:-3] + '_' + tag + '.0.json')
+			elif tag == 'null' : # ne possède pas de version
+				continue
 
 			try:
 				# npm ci (installe toutes les dépendances)
@@ -172,7 +174,7 @@ def process(repo_url,light=True):
 					api_data = get_data(repo_url) 
 				except :
 					api_data=[0,0,[]]
-					print(f'Erreur lors de l\'analyse git de la version {tag} : {e}')
+					print(f'Erreur avec l\'api git pour la version {tag} : {e}')
 
 				files_data = count_files(repo_path)
 
