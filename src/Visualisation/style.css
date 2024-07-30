@@ -1,0 +1,17 @@
+.tree-container {
+	width: 100%;
+	overflow: hidden;
+  }
+  .link {
+	fill: none;
+	stroke: #555;
+	stroke-width: 1.5px;
+  }
+  #filename {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+  }
+  #tree-slider {
+	width: 100%;
+  }
