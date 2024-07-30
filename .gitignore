@@ -172,3 +172,4 @@ src/oldtree.txt
 src/package-lock.json
 src/package.json
 /src/deps-copy
+/src/Visualisation/trees
