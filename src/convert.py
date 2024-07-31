@@ -18,7 +18,7 @@ def convert_to_tree(name, dependency,color):
     node = {
         "name": name,
         "value": 10, 
-        "type": new_color,  
+        "type": new_color,
         "level": new_color,  
         "children": []
     }
