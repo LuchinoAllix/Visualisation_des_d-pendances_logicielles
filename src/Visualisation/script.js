@@ -74,6 +74,7 @@ function loadFiles() {
 	fetch('paths.json')
 	  .then(response => response.json())
 	  .then(paths => {
+		slider.max = paths.length;
 		const treeFiles = paths.map(path => fetch(path).then(response => response.json()));
 		return Promise.all(treeFiles);
 	  })
