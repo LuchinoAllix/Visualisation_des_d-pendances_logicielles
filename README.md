@@ -99,7 +99,6 @@ et où chaque dépendance est de la forme :
   "resolved":  "",
   "overridden" : x,
   "commit_count": x,
-  "release_date": "xxxx-xx-xx xx:xx:xx",
   "contributor_count": x,
   "dependencies": [...]
 }
