@@ -141,3 +141,6 @@ Mise à part cela il y a un fichier `analyse.py` qui permet d'obtenir des idées
 ## Contexte
 
 Ce travail est fait pour un cours de l'université de Montréal : projet d'informatique (IFT 3150).
+
+
+https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api?apiVersion=2022-11-28
