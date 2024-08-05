@@ -163,14 +163,7 @@ cython_debug/
 /src/tmp
 /src/deps
 src/test.py
-/env_VDL
 src/oldtree.txt
 /src/trees
-/src/deps - Copy
-/deps - Copy
-/src/node_modules
-src/package-lock.json
-src/package.json
-/src/deps-copy
 /src/Visualisation/trees
-src/Visualisation/paths.json
+/Archives
