@@ -1,17 +1,63 @@
-.tree-container {
+
+label {
+	font-weight: bold;
+	margin-bottom: 5px;
+	display: inline-block;
+}
+  
+  /* Style pour les divs d'affichage */
+#filename,#generalData {
+	background-color: beige;
+	border-radius: 4px;
+	border: 1px solid #ccc; /* Bordure autour de la case */
+	padding: 5px;         /* Espacement interne */
+	margin: 10px auto;     /* Espacement externe et centrage */
+	width: 85%;            /* Largeur de la case */
+	text-align: center;
+}
+  
+  /* Style pour le conteneur du slider */
+#tree-slider {
 	width: 100%;
-	overflow: hidden;
-  }
-  .link {
-	fill: none;
-	stroke: #555;
-	stroke-width: 1.5px;
-  }
-  #filename {
+	margin-top: 10px;
+}
+  
+  /* Style pour le conteneur principal */
+.container {
 	display: flex;
+	flex-wrap: wrap;
 	justify-content: space-between;
+  	align-items: flex-start;
+	margin-bottom: 10px;
+	justify-content: center;
 	align-items: center;
+}
+  
+  /* Alignement et espacement pour les divs internes */
+  .innerDiv {
+	flex: 1;
+	padding: 5px;
+	box-sizing: border-box;
   }
-  #tree-slider {
+  
+  /* Style pour l'élément select */
+  select {
 	width: 100%;
+	padding: 5px;
+	box-sizing: border-box;
+	margin-bottom: 10px;
   }
+  
+  /* Style pour le conteneur de l'arbre */
+  .tree-container {
+	margin-top: 10px;
+  }
+  
+  /* Style pour l'ensemble du corps */
+  body {
+	font-family: Arial, sans-serif;
+	line-height: 1.6;
+	padding: 10px;
+  }
+ 
+  

@@ -5,6 +5,7 @@ const width = document.querySelector('.tree-container').clientWidth;
 const height = 500;
 const tooltip = d3.select(".tooltip");
 
+
 function drawTree(treeData){
 
 	// Dimension (bottom vaut 100 pour compenser le text et le gradient au dessus)
@@ -71,17 +72,35 @@ function drawTree(treeData){
 }
 
 function loadFiles() {
-	fetch('paths.json')
-	  .then(response => response.json())
-	  .then(paths => {
-		slider.max = paths.length;
-		const treeFiles = paths.map(path => fetch(path).then(response => response.json()));
-		return Promise.all(treeFiles);
-	  })
-	  .then(data => {
+	const type = document.getElementById("type-select").value;
+    const category = document.getElementById("category-select").value;
+
+	const filePath = `trees\\paths_${category}_${type}.json`;
+
+	document.getElementById("css-link").href =`trees\\colors_${category}.css`
+	fetch(filePath)
+    .then(response => response.json())
+    .then(paths => {
+      const treeFiles = paths.map(path => fetch(path).then(response => response.json()));
+      return Promise.all(treeFiles);
+    })
+    .then(data => {
+		d3.select("svg").remove();
 		treesData = data;
-		drawTree(treesData[currentTreeIndex]);
-	  })
+		const slider = document.getElementById("tree-slider");
+          slider.max = treesData.length;
+          slider.value = 1;
+          currentTreeIndex = 0;
+          drawTree(treesData[currentTreeIndex]);
+          document.getElementById('filename').innerHTML = `
+            <div>Fichier n&deg ${currentTreeIndex}</div>
+            <div>Version GitHub : ${treesData[currentTreeIndex].dir}</div>
+            <div>Date de release : ${treesData[currentTreeIndex].date}</div>`;
+		document.getElementById('generalData').innerHTML = `
+		<div>Nombre de versions : ${treesData[currentTreeIndex].nbVersion}</div>
+            <div>Nombre Maximum de commits : ${treesData[currentTreeIndex].maxCommit}</div>
+            <div>Nombre Maximum de contributeurs: ${treesData[currentTreeIndex].maxContributors}</div>`;
+    })
 	  .catch(error => console.error('Error fetching or processing tree files:', error));
   }
 
@@ -94,11 +113,19 @@ function loadFiles() {
       d3.select("svg").remove(); 
       drawTree(treesData[currentTreeIndex]);
       document.getElementById('filename').innerHTML = `
-        <span>Tree number : ${currentTreeIndex}</span>
-        <span>date : ${treesData[currentTreeIndex].date}</span>
-        <span>dir : ${treesData[currentTreeIndex].dir}</span>
-        <span>version npm : ${treesData[currentTreeIndex].version}</span>`;
+        <div>Fichier n&deg ${currentTreeIndex}</div>
+        <div>Version GitHub : ${treesData[currentTreeIndex].dir}</div>
+        <div>Date de release : ${treesData[currentTreeIndex].date}</div>`;
+		document.getElementById('generalData').innerHTML = `
+		<div>Nombre de versions : ${treesData[currentTreeIndex].nbVersion}</div>
+		<div>Nombre Maximum de commits : ${treesData[currentTreeIndex].maxCommit}</div>
+		<div>Nombre Maximum de contributeurs: ${treesData[currentTreeIndex].maxContributors}</div>`;
     }
   });
 
-loadFiles();
+document.getElementById("type-select").addEventListener("change", loadFiles);
+document.getElementById("category-select").addEventListener("change", loadFiles);
+
+document.addEventListener("DOMContentLoaded", () => {
+	loadFiles();
+  });

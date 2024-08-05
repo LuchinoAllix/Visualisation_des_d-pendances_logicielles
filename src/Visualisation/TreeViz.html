@@ -6,18 +6,41 @@
   <title>Animated Tree Slider with D3.js</title>
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="colors.css">
+  <link id="css-link" rel="stylesheet" href="trees/colors_version.css">
 </head>
 <body>
-  <div id="filename"></div>
-  
-	<input type="range" min="1" max="95" value="1" id="tree-slider">
+  <div class="container">
+    <div class="innerDiv" id="select">
+      <div>
+        <label for="type-select">Trier par :</label></br>
+        <select id="type-select">
+          <option value="d">Date</option>
+          <option value="v">Version</option>
+        </select>
+      </div>
+      <div>
+        <label for="category-select">Afficher des données sur :</label></br>
+        <select id="category-select">
+          <option value="commit">Le nombre de commit</option>
+          <option value="contributors">Le nombre de contributeurs</option>
+          <option value="version">L'évolution au fil des versions</option>
+        </select>
+      </div>
+    </div> 
+    <div class="innerDiv">
+      <div id="generalData"></div>
+    </div>
+    <div class="innerDiv">
+      <div id="filename"></div>
+    </div>
+  </div>
+
+  <input type="range" min="1" max="95" value="1" id="tree-slider">
   
   <div class="color-gradient"></div>
   
-	<div class="tree-container"></div>
+  <div class="tree-container"></div>
   
-  <script src="script.js"> </script>
-  
+  <script src="script.js"></script>
 </body>
 </html>
