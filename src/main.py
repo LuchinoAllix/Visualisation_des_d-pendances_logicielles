@@ -8,7 +8,7 @@ if __name__ == "__main__" :
 	p_start=time()
 
 	# Projets à analyser par défault
-	project_url = "https://github.com/meezwhite/p5.grain"
+	project_url = "https://github.com/processing/p5.js"
 
 	if len(argv) > 1 :
 		project_url = argv[1]
