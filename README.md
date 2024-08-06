@@ -42,6 +42,8 @@ Le code ne fonctionne pas en une traite, il y a deux opérations à faire :
 pip install requests matplotlib gitpython
 ```
 
+-> Le code utilise [`npm`](https://www.npmjs.com/), il faut que ce soit installé.
+
 -> Finalement, pour obtenir les données : exécuter `main.py` avec l'url du repo du projet javascript à analyser (ou rien, par déault le repo analysé est [P5.js](https://github.com/processing/p5.js)):
 
 Sous windows :
