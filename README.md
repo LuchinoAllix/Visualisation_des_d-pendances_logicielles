@@ -166,35 +166,35 @@ Exemple avec p5.js :
 
 ```
 └── cwd (src)
-	├── deps
-	|	├── p5_0.0.json
-	|	├── p5.0.1.json
-	|	|   ...
-	|	└── version-date.json
-	├── tmp (vide)
-	└── Visualisation
-	    ├── Trees
-	    |   ├── commit_d
-	    |   |   ├── XXXX-XX-XX XX-XX-XX.json
-	    |   |   ├── XXXX-XX-XX XX-XX-XX.json
-	    |   |   ...
-	    |   |   └──
-	    |   ├── commit_v
-	    |   |   ├── 0.0.json
-	    |   |   ├── 0.1.json
-	    |   |   ...
-	    |   |   └──
-	    |   ...
-	    |   ├── colors_commit.css
-	    |   ├── colors_contributors.css
-	    |   ├── colors_versions.css
-	    |   ├── paths_commit_d.json
-	    |   ├── paths_commit_v.json
-	    |   ...
-	    |   └── paths_version_v
-	    ├── script.js
-	    ├── style.css
-	    └── TreeViz.html
+    ├── deps
+    |   ├── p5_0.0.json
+    |   ├── p5.0.1.json
+    |   |   ...
+    |   └── version-date.json
+    ├── tmp (vide)
+    └── Visualisation
+        ├── Trees
+        |   ├── commit_d
+        |   |   ├── XXXX-XX-XX XX-XX-XX.json
+        |   |   ├── XXXX-XX-XX XX-XX-XX.json
+        |   |   ...
+        |   |   └──
+        |   ├── commit_v
+        |   |   ├── 0.0.json
+        |   |   ├── 0.1.json
+        |   |   ...
+        |   |   └──
+        |   ...
+        |   ├── colors_commit.css
+        |   ├── colors_contributors.css
+        |   ├── colors_versions.css
+        |   ├── paths_commit_d.json
+        |   ├── paths_commit_v.json
+        |   ...
+        |   └── paths_version_v
+        ├── script.js
+        ├── style.css
+        └── TreeViz.html
 
 ```
 
