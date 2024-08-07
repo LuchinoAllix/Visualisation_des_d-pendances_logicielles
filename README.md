@@ -20,8 +20,8 @@
 
 Ce repository contient du code qui sert à visualiser l'évolution des dépendances logicielles (de projets javascript) au cours des versions. Le code fonctionne en deux grosses parties :
 	
-	1) L'obtention des données en python
-	2) La visualisation des données en javascript 
+1) L'obtention des données en python  
+2) La visualisation des données en javascript 
 
 Grossièrement, `fetch.py` prend l'url d'un repo git et génère des fichiers `.json` pour chaque version. Dans chaque fichier se trouve la liste des dépendance et quelques métriques. Ensuite `convert.py` va transformer les fichiers `.json` pour qu'ils puissent être représenté graphiquement avec [D3.js](https://d3js.org/what-is-d3). Finalement, `TreeViz.html` va crée les visualisations à l'aide `Script.js`.
 
@@ -165,7 +165,7 @@ Trois dossiers vont être créer (s'ils n'existent pas déjà) :
 Exemple avec p5.js :
 
 ```
- └── cwd (src)
+└── cwd (src)
 	├── deps
 	|	├── p5_0.0.json
 	|	├── p5.0.1.json
@@ -174,27 +174,27 @@ Exemple avec p5.js :
 	├── tmp (vide)
 	└── Visualisation
 	    ├── Trees
-		|	├── commit_d
-		|	|	├── XXXX-XX-XX XX-XX-XX.json
-		|	|	├── XXXX-XX-XX XX-XX-XX.json
-		|   |	...
-		|	|	└──
-		|	├── commit_v
-		|	|	├── 0.0.json
-		|	|	├── 0.1.json
-		|   |	...
-		|	|	└──
-		|	...
-		|	├── colors_commit.css
-		|	├── colors_contributors.css
-		|	├── colors_versions.css
-		|	├── paths_commit_d.json
-		|	├── paths_commit_v.json
-		|	...
-		|	└── paths_version_v
-		├── script.js
-		├── style.css
-		└── TreeViz.html
+	    |   ├── commit_d
+	    |   |   ├── XXXX-XX-XX XX-XX-XX.json
+	    |   |   ├── XXXX-XX-XX XX-XX-XX.json
+	    |   |   ...
+	    |   |   └──
+	    |   ├── commit_v
+	    |   |   ├── 0.0.json
+	    |   |   ├── 0.1.json
+	    |   |   ...
+	    |   |   └──
+	    |   ...
+	    |   ├── colors_commit.css
+	    |   ├── colors_contributors.css
+	    |   ├── colors_versions.css
+	    |   ├── paths_commit_d.json
+	    |   ├── paths_commit_v.json
+	    |   ...
+	    |   └── paths_version_v
+	    ├── script.js
+	    ├── style.css
+	    └── TreeViz.html
 
 ```
 
