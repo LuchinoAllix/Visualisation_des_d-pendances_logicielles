@@ -15,12 +15,12 @@ if __name__ == "__main__" :
 
 	start = time()
 	process(project_url)
-	print(f'Temps total d\'analyse : {(time()-start) / 60} minutes\n')
+	print(f'Temps total d\'analyse : {round((time()-start) // 60,3)} minutes\n')
 
 	start = time()
 	convert()
 	normalize()
-	print(f'Temps total de conversion en arbres : {(time()-start) / 60} minutes\n')
+	print(f'Temps total de conversion en arbres : {round((time()-start) // 60,3)} minutes\n')
 
-	print(f'\nTemps total du programme : {(time()-p_start) / 60} minutes')
+	print(f'\nTemps total du programme : {round((time()-p_start) // 60,3)} minutes')
 
