@@ -1,7 +1,7 @@
 import json
 import os
 from normalize import normalize
-from fetch import verify_path
+from tools import verify_path
 import matplotlib.pyplot as plt
 
 def addToDico(name,color,dico):
@@ -67,7 +67,7 @@ def generate_colors(v_total):
 
 def convert():
     
-    print("\tConversion des données en arbres")
+    print("Conversion des données en arbres")
     
     with open(os.path.join('deps','version-date.json'),'r') as file :
         version_date = json.load(file)
