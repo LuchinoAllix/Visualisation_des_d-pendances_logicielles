@@ -3,7 +3,7 @@ import json
 
 def normalize():
 
-	print("\tNormalisation de la taille des arbres")
+	print("Normalisation de la taille des arbres")
 
 	treeDir = os.path.join('Visualisation','trees','commit_d')
 	dirs = sorted(os.walk(treeDir),key=lambda x:x[2])
