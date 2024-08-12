@@ -14,7 +14,6 @@
 	* 3.5 [Organisation des fichiers](#organisation-des-fichiers)
 4. [Contexte](#contexte)
 5. [Known Issues](#known-issues)
-6. [Improvement](#improvements)
 
 ## Informations générales
 
@@ -77,6 +76,8 @@ Il y a aussi une façon de trier les arbres, selon la date de publication de la 
 ## Explication du code
 
 Ce code sert à obtenir des informations sur des projets `.js` pour ensuite créer des visualisation sur ces dernières.
+
+> Pour mieux comprendre le fonctionnement général, il y a des schémas dans le rapport final du projet, [ici](https://www-ens.iro.umontreal.ca/ete/~allixlal/3150/index.html#F).
 
 Pour choisir le projet à analyser il faut le spécifier à l'exécution, [expliqué ici](#exécution).
 
@@ -168,7 +169,7 @@ Exemple avec p5.js :
 └── cwd (src)
     ├── deps
     |   ├── p5_0.0.json
-    |   ├── p5.0.1.json
+    |   ├── p5_0.1.json
     |   |   ...
     |   └── version-date.json
     ├── tmp (vide)
@@ -207,8 +208,4 @@ Ce travail est fait pour un cours de l'université de Montréal : [projet d'info
 
 ## Known Issues
 
-to do
-
-## Improvements
-
-to do
+La coloration de l'arbre ne fonctionne pas sous linux, il semble qu'une fonction utilisé avec pyplot soit dépréciée.
