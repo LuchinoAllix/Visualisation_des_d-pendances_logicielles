@@ -3,8 +3,6 @@ let currentTreeIndex = 0;
 
 const width = document.querySelector('.tree-container').clientWidth;
 const height = 500;
-const tooltip = d3.select(".tooltip");
-
 
 function drawTree(treeData){
 
@@ -51,24 +49,7 @@ function drawTree(treeData){
 	node.append("circle")
 	.attr("r", 0.1)
 	.style("stroke", d => d.data.type)
-	.style("fill", d => d.data.level)
-	.on("mouseover", (d) => {
-		tooltip.transition().duration(200).style("opacity", .9);
-		tooltip.html("Name: " + d.data.name + "<br/>");
-	})
-	.on("mouseout", d => {
-		tooltip.transition().duration(500).style("opacity", 0);
-	});
-
-	// adds the text to the node
-	/*
-	node.append("text")
-	.attr("dy", ".35em")
-	.attr("x", d => d.children ? (d.data.value + 5) * -1 : d.data.value + 5)
-	.attr("y", d => d.children && d.depth !== 0 ? -(d.data.value + 5) : d)
-	.style("text-anchor", d => d.children ? "end" : "start")
-	.text(d => d.data.name);*/
-
+	.style("fill", d => d.data.level);
 }
 
 function loadFiles() {
