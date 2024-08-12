@@ -9,22 +9,45 @@ from tools import deleteDir
 from tools import verify_path
 from datetime import datetime, timedelta
 
-requests_dico_git = {}
-requests_dico_npm = {}
-requests_dico_git_contributeur ={}
-requests_git = 0
-requests_npm = 0
-depProblems = 0
-log = ""
-cnt = 0
-dep_count = [0]
+requests_dico_git = {} # dictionnaire requête git -> data (getdata) 
+requests_dico_npm = {} # dictionnaire requête npm -> url git
 
+# dictionnaire requête git (sans version) -> contributeurs
+requests_dico_git_contributeur = {} 
+
+requests_git = 0 # Compteur pour stats
+requests_npm = 0 # Compteur pour stats
+depProblems = 0 # Compteur pour info
+
+log = "" # Log des problèmes de dl + dépendances
+
+cnt = 0 # Pour afficher la version courante
+
+# Pour afficher la dep courante (liste pour pas avoir besoin de global)
+dep_count = [0] 
+
+wait_time = 0 # Calcul du temps attendu total
+
+# Load du token git
 with open('token.txt') as file :
 	token = file.readline()
 	file.close()
 
-# fonction récursive pour obtenir toutes les dépendances
-def extract_dependencies(deps_dico, result):
+def extract_dependencies(deps_dico:dict, result:set) -> None:
+	""" 
+	Fonction récursive pour obtenir toutes les dépendances
+	
+	Args :
+		deps_dico (dict) : dictionnaire dont il faut compter les deps
+		result (set) : ensemble des dépendances
+	
+	Returns :
+		None
+
+	Effet de bord :
+		Modifie le set entré en paramètre
+	"""
+
 	if "dependencies" in deps_dico :
 		for name, data in deps_dico['dependencies'].items():
 			if "version" in data :
@@ -33,30 +56,80 @@ def extract_dependencies(deps_dico, result):
 			dep_count[0]+=1
 			extract_dependencies(data,result)
 
-def count_dependencies(data):
+def count_dependencies(data:dict) -> int:
+	""" 
+	Compte les dépendances dans un arbre
+	
+	Args :
+		deps_dico (dict) : dictionnaire dont il faut compter les deps
+	
+	Returns :
+		int : nombre de dépendances dans data
+	"""
 	all_dependencies = set()
 	extract_dependencies(data, all_dependencies)
 	return len(all_dependencies)
 
-def commitCount(u, r, v,headers):
+def commitCount(u:str, r:str, v:str,headers:str) -> int:
+	""" 
+	Compte le nombre de commits d'une version d'un repo. /!\ cumulatif ! 
+	C-à-d le nombre de commits d'une version compte tous les commits jusqu'à 
+	cette version
 	# https://gist.github.com/codsane/25f0fd100b565b3fce03d4bbd7e7bf33
-	response = requests.get(f'https://api.github.com/repos/{u}/{r}/commits?sha={v}&per_page=1', headers=headers)
+	
+	Args :
+		u (str) : utilisateur du repo
+		r (str) : nom du repo
+		v (str) : version du repo
+		headers (str) : authentification git
+	
+	Returns :
+		int : nombre commits
+
+	Raise :
+		Exception si l'url n'est pas correcte
+	"""
+	url = f'https://api.github.com/repos/{u}/{r}/commits?sha={v}&per_page=1'
+	response = requests.get(url, headers=headers)
 	global requests_git
 	requests_git+=1
-	waitForAPI(response)
+
+	waitForAPI(response) # Vérification du nombre d'appel restant
+
 	if 'last' in response.links:
 		last_page_url = response.links['last']['url']
 		return re.search(r'\d+$', last_page_url).group()
 	else:
-		return len(response.json())  # Retourne le nombre de commits si pas de lien 'last'
+		# Retourne le nombre de commits si pas de lien 'last'
+		return len(response.json())
 
-def contributorsList(u, r,v, headers):
-	if u+r in requests_dico_git_contributeur :
+def contributorsList(u:str, r:str,v:str, headers:str) -> [str]: # type: ignore
+	""" 
+	Compte le nombre de contributerus d'un repo. /!\ cumulatif ! 
+	C-à-d le nombre de contributeur est le même pour toutes les versions
+
+	Args :
+		u (String) : utilisateur du repo
+		r (String) : nom du repo
+		v (String) : version du repo
+		headers (String) : authentification git
+	
+	Returns :
+		int : nombre contributeurs
+
+	Raise :
+		Exception si l'url n'est pas correcte
+
+	Effet de bord :
+		Mise à jour du dico requests_dico_git_contributeur
+	"""
+	if u+r in requests_dico_git_contributeur : # Si on a déjà demandé l'info
 		return requests_dico_git_contributeur[u+r]
 	contributors = []
 	page = 1
-	while True:
-		response = requests.get(f'https://api.github.com/repos/{u}/{r}/contributors?sha={v}', params={'page': page}, headers=headers)
+	while True: # Pour avancer à travers les pages
+		url = f'https://api.github.com/repos/{u}/{r}/contributors?sha={v}'
+		response = requests.get(url, params={'page': page}, headers=headers)
 		global requests_git
 		requests_git+=1
 		waitForAPI(response)
@@ -74,23 +147,54 @@ def contributorsList(u, r,v, headers):
 			log +=(f"Erreur de décodage JSON pour {u}/{r} page {page}\n")
 			break
 		page += 1
-	requests_dico_git_contributeur[u+r]=contributors
+	requests_dico_git_contributeur[u+r]=contributors # mise à jour du dico
 	return contributors
 
-def waitForAPI(response):
+def waitForAPI(response:requests.Response) -> None:
+	""" 
+	Vérifie si on peut encore faire des requêtes à git ou si le taux de 5000
+	requêtes par heure est presque atteint. 
+	Si c'est le cas (<50) attend jusqu'à la réinitialisation
+	
+	Args :
+		response (requests.Response) : réponse d'une requête git (avec requests)
+
+	Effet de bord :
+		Peut mettre en pause le programme jusqu'à la réinitialisation
+	"""
 	rate_remaining = int(response.headers.get('X-RateLimit-Remaining'))
 	rate_reset = int(response.headers.get('X-RateLimit-Reset'))
 
 	if rate_remaining < 50:
 		# Calculer le temps à attendre jusqu'à la réinitialisation
-		sleep_time = rate_reset - int(time.time()) + 60 # 60 secondes de marge de sécurité
+		# 60 secondes de marge de sécurité
+		sleep_time = rate_reset - int(time.time()) + 60 
+		global wait_time
+		wait_time += sleep_time
 		resume_time = datetime.now() + timedelta(seconds=sleep_time)
 		print(f"\t/!\\ Nombre de requêtes restant est inférieur à 50.")
-		print(f"\tAttente de {sleep_time//60} minutes jusqu'à la réinitialisation à {resume_time.strftime('%H:%M:%S')}")
+		print(f"\tAttente de {sleep_time//60} minutes jusqu'à 
+		la réinitialisation à {resume_time.strftime('%H:%M:%S')}")
 		time.sleep(sleep_time)  
 
-def get_data_from_url(repo_url,v):
-	if len(repo_url)==0 :
+def get_data_from_url(repo_url:str,v:str) -> [int,str,[str]]: # type: ignore
+	""" 
+	Obtien le nombre de commits, la date du dernier commit et la liste 
+	de contributeurs d'une version d'un repository
+	
+	Args :
+		repo_url (String) : url du repo
+		v (String) : version du repo
+	
+	Returns :
+		[int, : nombre commits
+		 str, : date du dernier commit (0 sinon)
+		 [str]] : liste des contributeurs
+
+	Effets de bord :
+		Mises à jour de certains dictionnaire url -> data
+	"""
+	if len(repo_url)==0 : # Si l'url n'existe pas
 		return 0,0,[]
 
 	headers = { "Authorization": f"token {token}"}
@@ -109,24 +213,30 @@ def get_data_from_url(repo_url,v):
 	commits_count = 0
 
 	try:
-		commits_url = f"https://api.github.com/repos/{owner}/{repo_name}/commits?sha={v}"
-		response_commits = requests.get(commits_url,headers=headers)
+		commits_url = f"https://api.github.com
+		/repos/{owner}/{repo_name}/commits?sha={v}"
+		response = requests.get(commits_url,headers=headers)
 		global requests_git
 		requests_git+=1
-		response_commits.raise_for_status()  # Lève une exception pour les erreurs HTTP
-		last_commit_date = response_commits.json()[0]['commit']['author']['date']
-		waitForAPI(response_commits)
+		# Lève une exception pour les erreurs HTTP
+		response.raise_for_status()  
+		last_commit_date = response.json()[0]['commit']['author']['date']
+		waitForAPI(response)
 
 	except:
-		try :
-			commits_url = f"https://api.github.com/repos/{owner}/{repo_name}/commits?sha=v{v}"
-			response_commits = requests.get(commits_url,headers=headers)
+		try : # essai en rajoutant un v devant version (des fois automatiques
+			  # des fois non, donc il faut essayer les deux cas)
+			commits_url = f"https://api.github.com/
+								repos/{owner}/{repo_name}/commits?sha=v{v}"
+			response = requests.get(commits_url,headers=headers)
 			requests_git+=1
-			response_commits.raise_for_status()  # Lève une exception pour les erreurs HTTP
-			last_commit_date = response_commits.json()[0]['commit']['author']['date']
+			# Lève une exception pour les erreurs HTTP
+			response.raise_for_status() 
+			last_commit_date = response.json()[0]['commit']['author']['date']
 		except Exception as e:
 			global log
-			log += (f"Erreur lors de la récupération des données pour la date de dernier commit :\n \t{e}\n")
+			log += (f"Erreur lors de la récupération des 
+		   				données pour la date de dernier commit :\n \t{e}\n")
 			global depProblems
 			depProblems += 1
 
@@ -134,22 +244,27 @@ def get_data_from_url(repo_url,v):
 		should_try = True
 		contributors = contributorsList(owner,repo_name,v,headers)
 	except Exception as e :
-		try :
+		try : # encore une fois il faut essayer avec et sans le v devant version
 			contributors = contributorsList(owner,repo_name,'v'+v,headers)
 		except Exception as e : 
 			should_try = False
-			log +=(f"Erreur lors de la récupération des données pour la liste des contributeurs de {repo_url}: {e}\n")
+			log +=(f"Erreur lors de la récupération des données 
+		  				pour la liste des contributeurs de {repo_url}: {e}\n")
 			depProblems += 1
 
-	if should_try : # si la requête ne marche pas pour les contributeurs elle ne marche pas pour les commits
-		# ce qui n'est nécessairement le cas pour la date de commit
+	if should_try : 
+		# si la requête ne marche pas pour les contributeurs 
+		# elle ne marche pas pour les commits
+		# ce qui n'est pas nécessairement le cas pour la date de commit
 		try :
 			commits_count = commitCount(owner,repo_name,v,headers)
 		except Exception as e:
-			try :
+			try : # encore une fois il faut essayer avec 
+				  # et sans le v devant version
 				commits_count = commitCount(owner,repo_name,'v'+v,headers)
 			except Exception as e :
-				log += (f"Erreur lors de la récupération des données pour le nombre de commits de {repo_url}: {e}\n")
+				log += (f"Erreur lors de la récupération des données pour 
+							le nombre de commits de {repo_url}: {e}\n")
 				depProblems += 1
 
 	data = commits_count, last_commit_date, contributors
@@ -157,11 +272,21 @@ def get_data_from_url(repo_url,v):
 	
 	return data
 
-def count_files(repo_path):
+def count_files(repo_path:str)->(int,int): # type: ignore
+	""" 
+	Compte le nombre de fichier js et json dans un dossier
+	
+	Args :
+		repo_path (str) : adresse du dossier
+	
+	Returns :
+		(int, : nombre de fichiers js
+		 int) : nombre de fichiers json
+	"""
 	js_files = 0
 	json_files = 0
 
-	for root, dirs, files in os.walk(repo_path):
+	for _, _, files in os.walk(repo_path):
 		for file in files:
 			if file.endswith('.js'):
 				js_files += 1
@@ -170,7 +295,22 @@ def count_files(repo_path):
 
 	return js_files, json_files
 
-def process(repo_url):
+def process(repo_url:str) -> None:
+	""" 
+	Fonction principale, avec une url de repo, le télécharge et pour 
+	chaque version obtient des données (get_data_from_url) et pour chaque
+	dépendance de chaque version, obtient d'autres informations. Toutes les
+	informations sont écrites sur des fichiers jsons.
+	
+	Args :
+		repo_url (str) : url du repo
+
+	Effet de bord :
+		Ecriture des fichiers des dépendances
+		Affichage de données sur l'invite de commande
+		Création de dossiers
+		Exécution de commandes npm
+	"""
 
 	git_error = 0
 	is_windows = (os.name == 'nt')
@@ -206,7 +346,7 @@ def process(repo_url):
 
 	for tag in tags :
 		count_version+=1
-		print(f'\tAnalyse de la version {tag} ({count_version/len(tag)})')
+		print(f'\tAnalyse de la version {tag} ({count_version}/{len(tags)})')
 		start = time.time()
 		dep_count[0]=1
 
@@ -242,12 +382,14 @@ def process(repo_url):
 			except subprocess.CalledProcessError as e:
 				print(f'Erreur lors de l\'annulation de npm ci : {e}')
 
+			# suppresion des données inutiles 
 			deps_dict.pop('problems',None)
 			deps_dict.pop('error',None)
 
 			api_data=[0,0,[]]
 			files_data = 0,0
 
+			# rajout des nouvelles données
 			api_data = get_data_from_url(repo_url,tag) 
 			files_data = count_files(repo_path)
 			depNb = count_dependencies(deps_dict)
@@ -279,11 +421,13 @@ def process(repo_url):
 			log+=str(e)+'\n'
 			git_error+=1
 
-		print(f'\t -> time taken : {round((time.time()-start)/60,3)}\n')
+		print(f'\t -> time taken : {round((time.time()-start)/60,3)} minutes\n')
 
 	repo.close()
 	deleteDir(repo_path)
 
+	# Ecriture du fichier qui contient un dictionnaire de correspondance
+	# version -> date
 	with open(os.path.join(deps,'version-date.json'),'w') as file :
 		json.dump(version_date,file,indent=4)
 		file.close()
@@ -292,18 +436,35 @@ def process(repo_url):
 
 	global requests_npm
 	global requests_git
-
+	global wait_time
 	print('\nDonnées d\'analyse :')
 	print(f'Nombre de requête à git : {requests_git}')
 	print(f'Nombre de requête à npm : {requests_npm}')
 	print(f'Nombre de versions non analysées car error: {git_error}')
 	print(f'Nombre de problèmes rencontré avec l\'obtention de données git : {depProblems}')
+	print(f'Temps d\'attente (pour l\'api github) total : {wait_time//60} ')
 	print(f'Problèmes de téléchargement enregisté dans log.txt')
 	with open('log.txt','w') as f :
 		f.write(log)
 		f.close()
 
-def get_github_repo_url(package_name,version=None):
+def get_github_repo_url(package_name:str,version=None) -> str:
+	""" 
+	Obtient l'url d'un repo github grâce à son nom sur npm
+	
+	Args :
+		package_name (str) : nom du de la dépendance
+		version (str) : version du package
+
+	Returns :
+		str : url git du repo si elle existe, "" sinon
+
+	Raise :
+		Exception si l'url n'est pas correcte
+
+	Effet de bord :
+		Modification du dictionnaire de gestion des url npm->git 
+	"""
 	if version :
 		url = f"https://registry.npmjs.org/{package_name}/{version}"
 	else :
@@ -353,7 +514,19 @@ def get_github_repo_url(package_name,version=None):
 		log += (f"Failed to get GitHub URL for {package_name}\n")
 		return ""
 
-def enrich(deps_dict):
+def enrich(deps_dict:dict) -> None:
+	""" 
+	Télécharge des données pour chaque dépendance d'un dictionnaire
+	
+	Args :
+		deps_dict (dict) : arbre des dépendances
+	
+	Returns :
+		int : nombre commits
+
+	Effet de nord:
+		Modifie deps_dict en rajoutant des informations
+	"""
 	print('\tTéléchargement des données supplémentaire des dépendances')
 	if "name" not in deps_dict :
 		root_name="null"
@@ -365,7 +538,17 @@ def enrich(deps_dict):
 	cnt = 0
 	print('\n')
 
-def enrichRec(name,deps_dict):
+def enrichRec(name:str,deps_dict:dict) -> None:
+	""" 
+	Fonction récursive pour télécharger les informations supplémentaire sur 
+	toutes les dépendances.
+	
+	Args :
+		deps_dict (dict) : dictionnaire des dépendances
+		
+	Effet de bord :
+		Modifie deps_dict
+	"""
 	global cnt
 	cnt+=1
 	print(f"\tTraitement de la dépendance {cnt}/{dep_count[0]}", end='\r')
