@@ -1,7 +1,13 @@
 import os
 import json
 
-def normalize():
+def normalize() -> None:
+	""" 
+	Fait en sorte que les arbres aient tous la même hauteur
+
+	Effets de bord :
+		Modifie les dossiers avec les arbres
+	"""
 
 	print("Normalisation de la taille des arbres")
 
@@ -10,6 +16,7 @@ def normalize():
 	maxDepth = 0
 	depths = {}
 	
+	# Calcul la plus haute taille parmis tous les arbres
 	for subdir in dirs[0][2] :
 		with open(os.path.join(treeDir,subdir), 'r') as file:
 			tree = json.load(file)
@@ -35,13 +42,31 @@ def normalize():
 				file.close()
 
 
-def get_depth(dico):
-    if "children" not in dico or not dico["children"]:
-        return 1
-    else:
-        return 1 + max(get_depth(child) for child in dico["children"])
+def get_depth(dico:dict)->int:
+	""" 
+	Retourne la profondeur d'un arbre
+	
+	Args :
+		dico (dict) : arbre à analyser
 
-def deepen(dico,amount):
+	Returns :
+		int : la profondeur de l'arbre
+	"""
+	if "children" not in dico or not dico["children"]:
+		return 1
+	else:
+		return 1 + max(get_depth(child) for child in dico["children"])
+
+def deepen(dico:dict,amount:int)->None:
+	""" 
+	Augmente la profndeur d'un arbre d'une certaine valeur
+	
+	Args :
+		dico (dict) : l'arbre à modifier
+
+	Effets de bord :
+		modifie l'arbre
+	"""
 	current_node = dico
 	for _ in range(amount):
 		new_node = {
