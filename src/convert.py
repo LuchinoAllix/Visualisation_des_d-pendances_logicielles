@@ -4,14 +4,47 @@ from normalize import normalize
 from tools import verify_path
 import matplotlib.pyplot as plt
 
-def addToDico(name,color,dico):
+def addToDico(name:str,color:str,dico:dict)->str:
+    """ 
+	Retourne la couleur associé à une dependance dans le dictionnaire de gestion
+    des couleurs, si la dépendance est déjà présente, on retourne la couleur,
+    sinon on ajoute la nouvelle couleur fournie.
+	
+	Args :
+		name (str) : nom de la dépendance
+        color (str) : couleur associée à la nouvelle dépendance
+        dico (dict) : dictionnaire d'assocition des couleurs aux dependances
+
+    Returns : 
+        str : la couleur associée à la dépendance
+
+	Effets de bord :
+		modifie le dictionnaire
+	"""
     if name in dico :
         return dico[name]
     else :
         dico[name]= color
         return color
 
-def convert_to_tree_version(name, dependency,color,dico):
+def convert_to_tree_version(name:str, dependency:dict,color:str,dico:dict)->dict:
+    """ 
+	Fonction recursive pour transformer un arbre de dépendances en arbre
+    visualisable avec d3 en incorporant la couleur en fonction des version
+    des dépendances
+	
+	Args :
+		name (str) : nom de la dépendance
+        dependency (dict) : dictionnaire de l'arbre des dépendances
+        color (str) : couleur à ajouter
+        dico (dict) : dicionnaire des dep -> couleur
+
+    Return :
+        dict : dictionnaire des noeuds visualisable
+
+	Effet de bord :
+		modifie le dictionnaire des couleur
+	"""
     if "version" not in dependency :
         new_color = addToDico(name,color,dico)
     else :
@@ -36,8 +69,23 @@ def convert_to_tree_version(name, dependency,color,dico):
     
     return node
 
-def convert_to_tree_data(name, dependency,color_scale,choice):
+def convert_to_tree_data(name:str, dependency:dict,color_scale:[str],choice)->dict: # type: ignore
+    """ 
+	Fonction recursive pour transformer un arbre de dépendances en arbre
+    visualisable avec d3 en incorporant la couleur en fonction d'une echelle'
+	
+	Args :
+		name (str) : nom de la dépendance
+        dependency (dict) : dictionnaire de l'arbre des dépendances
+        color_scale ([str]) : liste des couleur à ajouter
+        dico (dict) : dicionnaire des dep -> couleur
 
+    Return :
+        dict : dictionnaire des noeuds visualisable
+
+	Effet de bord :
+		modifie le dictionnaire des couleur
+	"""
     if choice not in dependency :
         dependency[choice] = 0
         
@@ -60,12 +108,29 @@ def convert_to_tree_data(name, dependency,color_scale,choice):
     
     return node
 
-def generate_colors(v_total):
+def generate_colors(v_total:int)->[str]: # type: ignore
+    """ 
+	Créer une échelle de couleur en fonction de v_total
+	
+	Args :
+		v_total (int) : nombre de couleurs voulue
+
+    Return :
+        [str] : liste de couleurs format rgba
+
+	"""
     cmap = plt.cm.get_cmap('plasma', v_total)
     colors = [cmap(i) for i in range(v_total)]
     return [f"rgba({int(r*255)},{int(g*255)},{int(b*255)},{a})" for r, g, b, a in colors]
 
-def convert():
+def convert()->None:
+    """ 
+	Fonction principale, crée des arbres visualisable pour d3 à partir 
+    des arbres de dépendances.
+
+	Effet de bord :
+		Créer des fichiers pour la visualisation des arbres (json et css)
+	"""
     
     print("Conversion des données en arbres")
     
@@ -78,27 +143,41 @@ def convert():
 
     nbcommit, nbcontributors = getMaxNbCommitAndNbContributors()
 
+    # crée les échelles de couleur
     colors_version = generate_colors(len(dirs_version))
     colors_commit = generate_colors(nbcommit+1)
     colors_contributors = generate_colors(nbcontributors+1)
 
     dataFields = ['version','commit','contributors']
     colors = [colors_version,colors_commit,colors_contributors]
-    
+
+    # crée les arbres et les fichiers qui les relients entre eux     
     fun('v',dirs_version,colors)
     fun('d',dirs_date,colors)
 
+    # crée les fichiers css 
     for i in range(len(dataFields)):
         make_CSS(colors[i],dataFields[i])
 
-def fun(type,dirs,colors):
+def fun(type:str,dirs:[str],colors:[str]) -> None: # type: ignore
+    """ 
+	Fonction qui crée les fichiers avec les données visualisables 
+	
+	Args :
+		type (str) : type de tri (v:version, d:date)
+        dirs ([str]) : liste des fichier des dépendances
+        colors ([str]) : échelle de couleur
+
+	Effet de bord :
+		Crée les fichiers visualisable ainsi que ceux qui leur donne un ordre
+	"""
     dico_colors={}
     dataFields = ['version','commit','contributors']
     paths = {'version':[],'commit':[],'contributors':[]}
     cnt = 0
-    for field in dataFields :
+    for field in dataFields : # crée les dossier
         verify_path(os.path.join('Visualisation','trees',field+'_'+type))
-    for dir in dirs :
+    for dir in dirs : # pour chaque fichier de deps on crée les fichiers visualisables
         v = dir.split('_')[-1].split('.json')[0]
         with open(dir, 'r') as file:
             data = json.load(file)
@@ -141,7 +220,17 @@ def fun(type,dirs,colors):
             json.dump(paths[field],file,indent=4)
             file.close()
 
-def make_CSS(rgba_colors,name) :
+def make_CSS(rgba_colors:[str],name:str)->None : # type: ignore
+    """ 
+	Crée les fichier css avec l'echelle de couleur
+	
+	Args :
+        rgba_colors ([str]) : liste des couleurs
+		name (str) : nom du fichier
+
+	Effet de bord :
+		Crée les fichiers
+	"""
     gradient_stops = ', '.join(rgba_colors)
 
     css_content = f""" 
@@ -155,7 +244,16 @@ def make_CSS(rgba_colors,name) :
     with open(os.path.join('Visualisation','trees',"colors_"+name+".css"), "w") as file:
         file.write(css_content)
 
-def getMaxNbCommitAndNbContributors():
+def getMaxNbCommitAndNbContributors()->None:
+    """ 
+	Pour avoir le maximum de nombre de commit et de contribueur dans les fichiers
+    de dépendances
+
+    Return :
+        (int, : nombre maximum de commits
+         int) : nombre maximum de contributeurs
+
+	"""
     dirs = sorted(os.walk('deps'),key=lambda x:x[2])
     maxes = [0,0]
     for subdir in dirs[0][2] :
@@ -165,7 +263,16 @@ def getMaxNbCommitAndNbContributors():
         getMaxNbCommitAndNbContributorsRec(deps_dico,maxes)
     return maxes
 
-def getMaxNbCommitAndNbContributorsRec(deps_dico,maxes):
+def getMaxNbCommitAndNbContributorsRec(deps_dico:dict,maxes:(int,int))->None: # type: ignore
+    """ 
+	fonciton recursive Pour avoir le maximum de nombre de commit et de contribueur 
+    dans un arbre de dépendances
+
+    Args :
+        deps_dico (dict) : dictionnaire des dépendances
+        maxes (int,int) : meilleure valeur jusqu'à présent
+
+	"""
     if 'commit_count' in deps_dico :
         nb_commits = deps_dico['commit_count']
         if  int(nb_commits) > maxes[0] :
