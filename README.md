@@ -33,7 +33,7 @@ Le code ne fonctionne pas en une traite, il y a deux opérations à faire :
 ### 1) Obtention des données
 -> En premier lieu il faut remplir le fichier `token.txt` avec un token d'authentification GitHub. Vu que ce code fait un grand nombre de requêtes à l'api GitHub (pour [P5.js](https://github.com/processing/p5.js) ~ 6000 requêtes) il faut utiliser un token, qui permet 5000 ~ requêtes par heure contre 60 en temps normal ([source](https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api?apiVersion=2022-11-28)). Ce facteur de 80 est non négligeable.
 
->  L'exécution du code est longue, pour une librairie comme [P5.js](https://github.com/processing/p5.js) cela peut prendre du temps, jusqu'à 1h30 ! 
+>  L'exécution du code est longue, pour une librairie comme [P5.js](https://github.com/processing/p5.js) cela peut prendre du temps, jusqu'à 2h30 ! 
 
 -> En deuxième lieu il faut installer certaines librairies python :
 
